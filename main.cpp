@@ -1,18 +1,19 @@
 ﻿#include "board.h"
 #include "evaluation.h"
+#include "minimax.h"
 #include <iostream>
 #include <locale.h>
 
 int main() {
     setlocale(LC_ALL, "Rus");
-    // Пример: компьютер играет за белых, игрок за черных
+
     bool isComputerWhite = true;
 
-    std::cout << "=== ИГРА АНГЛИЙСКИЕ ШАШКИ ===\n";
-    std::cout << "Компьютер играет за: " << (isComputerWhite ? "БЕЛЫХ (w/W)" : "ЧЕРНЫХ (b/B)") << "\n";
-    std::cout << "Игрок играет за: " << (isComputerWhite ? "ЧЕРНЫХ (b/B)" : "БЕЛЫХ (w/W)") << "\n\n";
+    std::cout << "=== ИГРА АНГЛИЙСКИЕ ШАШКИ ===" << std::endl;
+    std::cout << "Компьютер играет за: " << (isComputerWhite ? "БЕЛЫХ" : "ЧЕРНЫХ") << std::endl;
+    std::cout << "Игрок играет за: " << (isComputerWhite ? "ЧЕРНЫХ" : "БЕЛЫХ") << std::endl << std::endl;
 
-    // Создание тестовой доски с начальной позицией
+    // Создание начальной позиции
     Board board(BOARD_SIZE, std::vector<int>(BOARD_SIZE, EMPTY));
 
     // Расстановка черных (верх доски)
@@ -33,31 +34,62 @@ int main() {
         }
     }
 
-    std::cout << "Начальная позиция:\n";
+    std::cout << "Начальная позиция:" << std::endl;
     printBoard(board);
 
-    std::cout << "=== ОЦЕНКИ ПОЗИЦИИ (с точки зрения компьютера) ===\n";
-    std::cout << "Базовая оценка: " << evaluate(board, isComputerWhite, EVAL_BASIC) << "\n";
-    std::cout << "Позиционная оценка: " << evaluate(board, isComputerWhite, EVAL_POSITIONAL) << "\n";
-    std::cout << "Расширенная оценка: " << evaluate(board, isComputerWhite, EVAL_ADVANCED) << "\n";
-    std::cout << "Комплексная оценка: " << evaluate(board, isComputerWhite, EVAL_COMPLEX) << "\n";
-    std::cout << "\nПоложительное значение = хорошо для компьютера\n";
-    std::cout << "Отрицательное значение = хорошо для игрока\n";
+    // ДЕМОНСТРАЦИЯ РАБОТЫ МИНИМАКСА
+    std::cout << "=== ТЕСТИРОВАНИЕ МИНИМАКСА ===" << std::endl;
+    std::cout << "Поиск лучшего хода для "
+        << (isComputerWhite ? "БЕЛЫХ" : "ЧЕРНЫХ") << std::endl;
+    std::cout << "Глубина поиска: 3 полухода" << std::endl << std::endl;
 
-    // Тестовая позиция - компьютер имеет преимущество
-    Board winningBoard(BOARD_SIZE, std::vector<int>(BOARD_SIZE, EMPTY));
-    winningBoard[0][1] = isComputerWhite ? BLACK_MAN : WHITE_MAN;
-    winningBoard[3][4] = isComputerWhite ? WHITE_KING : BLACK_KING;
-    winningBoard[5][2] = isComputerWhite ? WHITE_KING : BLACK_KING;
-    winningBoard[2][5] = isComputerWhite ? BLACK_MAN : WHITE_MAN;
+    SearchResult result = findBestMove(board, 3, isComputerWhite, EVAL_COMPLEX);
 
-    std::cout << "\n\n=== ТЕСТОВАЯ ПОЗИЦИЯ (компьютер имеет преимущество) ===\n";
-    printBoard(winningBoard);
+    std::cout << "Лучший найденный ход:" << std::endl;
+    printMove(result.bestMove);
+    std::cout << "Оценка позиции: " << result.score << std::endl << std::endl;
 
-    std::cout << "ОЦЕНКИ (с точки зрения компьютера):\n";
-    std::cout << "Базовая: " << evaluate(winningBoard, isComputerWhite, EVAL_BASIC) << "\n";
-    std::cout << "Позиционная: " << evaluate(winningBoard, isComputerWhite, EVAL_POSITIONAL) << "\n";
-    std::cout << "Расширенная: " << evaluate(winningBoard, isComputerWhite, EVAL_ADVANCED) << "\n";
-    std::cout << "Комплексная: " << evaluate(winningBoard, isComputerWhite, EVAL_COMPLEX) << "\n";
+    // Выполнение найденного хода
+    if (result.bestMove.fromRow != -1) {
+        std::cout << "Применяем ход..." << std::endl;
+        makeMove(board, result.bestMove);
+        std::cout << "Позиция после хода:" << std::endl;
+        printBoard(board);
+    }
+
+    // Демонстрация тестовой позиции
+    std::cout << "=== ТЕСТОВАЯ ПОЗИЦИЯ ===" << std::endl;
+    Board testBoard(BOARD_SIZE, std::vector<int>(BOARD_SIZE, EMPTY));
+    testBoard[0][1] = BLACK_MAN;
+    testBoard[2][2] = WHITE_KING;
+    testBoard[3][5] = WHITE_MAN;
+    testBoard[5][4] = BLACK_MAN;
+    testBoard[6][7] = WHITE_MAN;
+
+    std::cout << "Позиция:" << std::endl;
+    printBoard(testBoard);
+
+    std::cout << "Анализ позиции:" << std::endl;
+    std::cout << "Возможных ходов для БЕЛЫХ: "
+        << generateMoves(testBoard, true).size() << std::endl;
+    std::cout << "Возможных ходов для ЧЕРНЫХ: "
+        << generateMoves(testBoard, false).size() << std::endl;
+
+    std::cout << "Оценка позиции (COMPLEX): "
+        << evaluate(testBoard, true, EVAL_COMPLEX) << std::endl;
+
+    // Поиск лучшего хода для белых в тестовой позиции
+    std::cout << "\nПоиск лучшего хода для БЕЛЫХ в тестовой позиции:" << std::endl;
+    SearchResult testResult = findBestMove(testBoard, 3, true, EVAL_COMPLEX);
+
+    if (testResult.bestMove.fromRow != -1) {
+        std::cout << "Лучший ход:" << std::endl;
+        printMove(testResult.bestMove);
+        std::cout << "Оценка после хода: " << testResult.score << std::endl;
+    }
+    else {
+        std::cout << "Нет доступных ходов!" << std::endl;
+    }
+
     return 0;
 }

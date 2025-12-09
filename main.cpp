@@ -1,95 +1,42 @@
-﻿#include "board.h"
-#include "evaluation.h"
-#include "minimax.h"
+﻿#include "game.h"
 #include <iostream>
 #include <locale.h>
 
-int main() {
+int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "Rus");
 
-    bool isComputerWhite = true;
+    std::cout << "=== АНГЛИЙСКИЕ ШАШКИ ===" << std::endl;
+    std::cout << "Инициализация игры..." << std::endl;
 
-    std::cout << "=== ИГРА АНГЛИЙСКИЕ ШАШКИ ===" << std::endl;
-    std::cout << "Компьютер играет за: " << (isComputerWhite ? "БЕЛЫХ" : "ЧЕРНЫХ") << std::endl;
-    std::cout << "Игрок играет за: " << (isComputerWhite ? "ЧЕРНЫХ" : "БЕЛЫХ") << std::endl << std::endl;
+    CheckersGame game;
 
-    // Создание начальной позиции
-    Board board(BOARD_SIZE, std::vector<int>(BOARD_SIZE, EMPTY));
-
-    // Расстановка черных (верх доски)
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            if ((i + j) % 2 == 1) {
-                board[i][j] = BLACK_MAN;
-            }
-        }
+    if (!game.initialize()) {
+        std::cerr << "ОШИБКА: Не удалось инициализировать игру!" << std::endl;
+        std::cerr << "Убедитесь что:" << std::endl;
+        std::cerr << "1. Установлены библиотеки SDL2 и SDL2_ttf" << std::endl;
+        std::cerr << "2. Файл arial.ttf находится в папке программы" << std::endl;
+        return -1;
     }
 
-    // Расстановка белых (низ доски)
-    for (int i = 5; i < 8; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            if ((i + j) % 2 == 1) {
-                board[i][j] = WHITE_MAN;
-            }
-        }
+    std::cout << "Игра успешно запущена!" << std::endl;
+    std::cout << "Управление:" << std::endl;
+    std::cout << "  - Мышь: клик для выбора фигуры и хода" << std::endl;
+    std::cout << "  - N: новая игра" << std::endl;
+    std::cout << "  - ESC: пауза/выход" << std::endl;
+    std::cout << "  - C: сменить цвет (в меню)" << std::endl;
+    std::cout << "  - D: изменить сложность (в меню)" << std::endl;
+
+    try {
+        game.run();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "ОШИБКА во время игры: " << e.what() << std::endl;
+        game.cleanup();
+        return -1;
     }
 
-    std::cout << "Начальная позиция:" << std::endl;
-    printBoard(board);
-
-    // ДЕМОНСТРАЦИЯ РАБОТЫ МИНИМАКСА
-    std::cout << "=== ТЕСТИРОВАНИЕ МИНИМАКСА ===" << std::endl;
-    std::cout << "Поиск лучшего хода для "
-        << (isComputerWhite ? "БЕЛЫХ" : "ЧЕРНЫХ") << std::endl;
-    std::cout << "Глубина поиска: 3 полухода" << std::endl << std::endl;
-
-    SearchResult result = findBestMove(board, 3, isComputerWhite, EVAL_COMPLEX);
-
-    std::cout << "Лучший найденный ход:" << std::endl;
-    printMove(result.bestMove);
-    std::cout << "Оценка позиции: " << result.score << std::endl << std::endl;
-
-    // Выполнение найденного хода
-    if (result.bestMove.fromRow != -1) {
-        std::cout << "Применяем ход..." << std::endl;
-        makeMove(board, result.bestMove);
-        std::cout << "Позиция после хода:" << std::endl;
-        printBoard(board);
-    }
-
-    // Демонстрация тестовой позиции
-    std::cout << "=== ТЕСТОВАЯ ПОЗИЦИЯ ===" << std::endl;
-    Board testBoard(BOARD_SIZE, std::vector<int>(BOARD_SIZE, EMPTY));
-    testBoard[0][1] = BLACK_MAN;
-    testBoard[2][2] = WHITE_KING;
-    testBoard[3][5] = WHITE_MAN;
-    testBoard[5][4] = BLACK_MAN;
-    testBoard[6][7] = WHITE_MAN;
-
-    std::cout << "Позиция:" << std::endl;
-    printBoard(testBoard);
-
-    std::cout << "Анализ позиции:" << std::endl;
-    std::cout << "Возможных ходов для БЕЛЫХ: "
-        << generateMoves(testBoard, true).size() << std::endl;
-    std::cout << "Возможных ходов для ЧЕРНЫХ: "
-        << generateMoves(testBoard, false).size() << std::endl;
-
-    std::cout << "Оценка позиции (COMPLEX): "
-        << evaluate(testBoard, true, EVAL_COMPLEX) << std::endl;
-
-    // Поиск лучшего хода для белых в тестовой позиции
-    std::cout << "\nПоиск лучшего хода для БЕЛЫХ в тестовой позиции:" << std::endl;
-    SearchResult testResult = findBestMove(testBoard, 3, true, EVAL_COMPLEX);
-
-    if (testResult.bestMove.fromRow != -1) {
-        std::cout << "Лучший ход:" << std::endl;
-        printMove(testResult.bestMove);
-        std::cout << "Оценка после хода: " << testResult.score << std::endl;
-    }
-    else {
-        std::cout << "Нет доступных ходов!" << std::endl;
-    }
+    game.cleanup();
+    std::cout << "Игра завершена. Спасибо за игру!" << std::endl;
 
     return 0;
 }

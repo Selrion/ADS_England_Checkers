@@ -8,6 +8,8 @@ struct Move {
     int fromRow, fromCol;
     int toRow, toCol;
     bool isCapture;  // Является ли ход взятием
+    int capturedPiece;  // Какая фигура была съедена
+    int movedPiece;  // Какая фигура двигалась (для отмены превращения)
 };
 
 // Структура для результата поиска

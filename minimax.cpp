@@ -85,6 +85,8 @@ std::vector<Move> generateMoves(const Board& board, bool isWhite) {
                     move.toRow = nextRow;
                     move.toCol = nextCol;
                     move.isCapture = false;
+                    move.capturedPiece = EMPTY;
+                    move.movedPiece = piece;
                     moves.push_back(move);
                 }
 
@@ -107,6 +109,8 @@ std::vector<Move> generateMoves(const Board& board, bool isWhite) {
                         move.toRow = captureRow;
                         move.toCol = captureCol;
                         move.isCapture = true;
+                        move.capturedPiece = enemy;
+                        move.movedPiece = piece;
                         moves.push_back(move);
                     }
                 }
@@ -153,31 +157,15 @@ void makeMove(Board& board, const Move& move) {
 
 // Отмена последнего хода
 void undoMove(Board& board, const Move& move) {
-    int piece = board[move.toRow][move.toCol];
-
-    // Возвращаем фигуру на исходную позицию
-    board[move.fromRow][move.fromCol] = piece;
+    // Возвращаем фигуру на исходную позицию (используем сохраненный тип)
+    board[move.fromRow][move.fromCol] = move.movedPiece;
     board[move.toRow][move.toCol] = EMPTY;
-
-    // Восстанавливаем оригинальный тип фигуры если было превращение
-    if ((piece == WHITE_KING && move.toRow == 0) ||
-        (piece == BLACK_KING && move.toRow == BOARD_SIZE - 1)) {
-        // Определяем был ли это WHITE_MAN или BLACK_MAN до превращения
-        if (piece == WHITE_KING) {
-            board[move.fromRow][move.fromCol] = WHITE_MAN;
-        }
-        else if (piece == BLACK_KING) {
-            board[move.fromRow][move.fromCol] = BLACK_MAN;
-        }
-    }
 
     // Восстанавливаем съеденную фигуру
     if (move.isCapture) {
         int midRow = (move.fromRow + move.toRow) / 2;
         int midCol = (move.fromCol + move.toCol) / 2;
-
-        // Нужно определить какая фигура была съедена
-        // Это требует дополнительной информации в структуре Move
+        board[midRow][midCol] = move.capturedPiece;
     }
 }
 
@@ -262,5 +250,5 @@ void printMove(const Move& move) {
     std::cout << "Ход: [" << move.fromRow << "," << move.fromCol << "] -> "
         << "[" << move.toRow << "," << move.toCol << "]";
     if (move.isCapture) std::cout << " (взятие)";
-    std::cout << "\n";
+    std::cout << std::endl;
 }
